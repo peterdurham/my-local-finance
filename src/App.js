@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 import { BrowserRouter as Router, Route, Switch } from "react-router-dom";
+import { useQuery } from "@apollo/client";
+import jwt_decode from "jwt-decode";
 
 import Dashboard from "./components/dashboard";
 import Portfolio from "./components/portfolio";
@@ -14,19 +16,46 @@ import Currencies from "./components/assets/currencies";
 import Settings from "./components/settings";
 import Signup from "./components/auth/signup";
 import Login from "./components/auth/login";
+import TodoList from "./components/todoList";
+import isEmpty from "./utils/is-empty";
+
+import { GET_PORTFOLIO } from "./queries";
 
 const App = (props) => {
   const [searchText, setSearchText] = useState("");
+  const [auth, setAuth] = useState({ isAuthenticated: false, user: {} });
+
+  const { data, loading, error } = useQuery(GET_PORTFOLIO, {
+    skip: !auth.isAuthenticated,
+  });
+
+  useEffect(() => {
+    if (localStorage.token) {
+      const decoded = jwt_decode(localStorage.token);
+      setAuth({
+        user: decoded,
+        isAuthenticated: !isEmpty(decoded),
+      });
+    }
+  }, []);
+
+  if (loading) return "Loading...";
+  if (error) return `Error! ${error.message}`;
 
   return (
     <Router>
-      <Layout>
+      <Layout auth={auth} setAuth={setAuth}>
+        {/* <TodoList auth={auth} /> */}
         <Switch>
           <Route exact path="/">
             <Dashboard />
           </Route>
           <Route path="/portfolio">
-            <Portfolio />
+            {auth.isAuthenticated && !loading ? (
+              <Portfolio auth={auth} portfolio={data.portfolio} />
+            ) : (
+              <span>Please log in</span>
+            )}
           </Route>
           <Route exact path="/stocks">
             <Stocks searchText={searchText} setSearchText={setSearchText} />
@@ -41,16 +70,24 @@ const App = (props) => {
             <Crypto />
           </Route>
           <Route path="/currencies">
-            <Currencies />
+            {auth.isAuthenticated && !loading ? (
+              <Currencies
+                auth={auth}
+                data={data.portfolio.currencies}
+                portfolioLoading={loading}
+              />
+            ) : (
+              <div>Please log in</div>
+            )}
           </Route>
           <Route path="/settings">
             <Settings />
           </Route>
           <Route path="/signup">
-            <Signup />
+            <Signup setAuth={setAuth} />
           </Route>
           <Route path="/login">
-            <Login />
+            <Login setAuth={setAuth} />
           </Route>
         </Switch>
       </Layout>

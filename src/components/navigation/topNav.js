@@ -1,7 +1,8 @@
 import React from "react";
 import styled from "styled-components";
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, useHistory, Link } from "react-router-dom";
 import { GiTwoCoins } from "react-icons/gi";
+import { ApolloConsumer } from "@apollo/client";
 
 const routeLabels = [
   {
@@ -81,24 +82,6 @@ const TopNavStyles = styled.div`
     #TopNav__auth {
       display: flex;
     }
-    #TopNav__signup {
-      padding: 6px 14px;
-      color: ${(props) => props.theme.textLight};
-      border: 2px solid ${(props) => props.theme.accentBlue};
-      border-radius: 24px;
-      transition: all 0.3s;
-      &:hover {
-        background: ${(props) => props.theme.accentBlue};
-      }
-    }
-
-    #TopNav__login {
-      padding: 6px 14px;
-      color: ${(props) => props.theme.textLight};
-      background: ${(props) => props.theme.accentBlue};
-      border-radius: 24px;
-      margin-left: 14px;
-    }
 
     #TopNav__logout {
       padding: 6px 14px;
@@ -112,34 +95,53 @@ const TopNavStyles = styled.div`
   }
 `;
 
-const TopNav = ({ auth, logoutUser }) => {
+const TopNav = ({ auth, setAuth, client }) => {
   const location = useLocation();
-
+  const history = useHistory();
   const route = routeLabels.filter(
     (route) => route.pathname === location.pathname
   )[0];
 
   return (
-    <TopNavStyles>
-      <div id="TopNav__left">
-        <Link to="/" id="site-logo">
-          <GiTwoCoins />
-          <span>My Local Finance</span>
-        </Link>
-      </div>
-      <div id="TopNav__right">
-        <div id="TopNav__route">{route && <span>{route.label}</span>}</div>
+    <ApolloConsumer>
+      {(client) => (
+        <TopNavStyles>
+          <div id="TopNav__left">
+            <Link to="/" id="site-logo">
+              <GiTwoCoins />
+              <span>My Local Finance</span>
+            </Link>
+          </div>
+          <div id="TopNav__right">
+            <div id="TopNav__route">{route && <span>{route.label}</span>}</div>
 
-        <div id="TopNav__auth">
-          <Link to="/signup" id="TopNav__signup">
-            Sign up
-          </Link>
-          <Link to="/login" id="TopNav__login">
-            Login
-          </Link>
-        </div>
-      </div>
-    </TopNavStyles>
+            <div id="TopNav__auth">
+              {auth.isAuthenticated ? (
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("token");
+                    setAuth({ isAuthenticated: false, user: {} });
+                    client.resetStore();
+                    history.push("/");
+                  }}
+                >
+                  Logout
+                </button>
+              ) : (
+                <>
+                  <Link to="/signup" style={{ color: "white" }}>
+                    Sign up
+                  </Link>
+                  <Link to="/login" style={{ color: "white" }}>
+                    Login
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </TopNavStyles>
+      )}
+    </ApolloConsumer>
   );
 };
 

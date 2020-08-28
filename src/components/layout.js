@@ -73,13 +73,13 @@ const MainStyles = styled.main`
   padding: 32px;
 `;
 
-const Layout = ({ children, auth, user, logoutUser }) => {
+const Layout = ({ children, auth, setAuth, user }) => {
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyle />
 
       <LayoutStyles>
-        <TopNav auth={auth} logoutUser={logoutUser} />
+        <TopNav auth={auth} setAuth={setAuth} />
         <SideNav auth={auth} user={user} />
         <MainStyles>{children}</MainStyles>
       </LayoutStyles>
